@@ -1,0 +1,341 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: IAM Roles for TNB
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label: TNB IAM Roles
+        Parameters:
+          - tnbServiceRoleName
+          - tnbEksClusterRoleName
+          - tnbEksNodeRoleName
+          - tnbEksMultusRoleName
+          - tnbLifecycleHookRoleName
+
+Parameters:
+  tnbServiceRoleName:
+    Type: String
+    Description: Service Role for TNB
+    Default: "TnbServiceRole"
+
+  tnbEksClusterRoleName:
+    Type: String
+    Description: TNB EKS cluster role name
+    Default: "TnbEksClusterRole"
+
+  tnbEksNodeRoleName:
+    Type: String
+    Description: TNB EKS Node role name
+    Default: "TnbEksNodeRole"
+
+  tnbEksMultusRoleName:
+    Type: String
+    Description: TNB EKS Multus role name
+    Default: "TnbEksMultusRole"
+
+  tnbLifecycleHookRoleName:
+    Type: String
+    Description: TNB Lifecycle Hook role name
+    Default: "TnbEksLifecycleHookRole"
+
+Mappings:
+  PartitionMap:
+    aws:
+      EC2ServicePrincipal: "ec2.amazonaws.com"
+    aws-us-gov:
+      EC2ServicePrincipal: "ec2.amazonaws.com"
+    aws-cn:
+      EC2ServicePrincipal: "ec2.amazonaws.com.cn"
+    aws-iso:
+      EC2ServicePrincipal: "ec2.c2s.ic.gov"
+    aws-iso-b:
+      EC2ServicePrincipal: "ec2.sc2s.sgov.gov"
+
+Resources:
+  TnbServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: This IAM Role is a service role for TNB
+      RoleName: !Ref tnbServiceRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - events.amazonaws.com
+          Action:
+          - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - tnb.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: TnbServiceRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: "*"
+                Sid: "AssumeRole"
+              - Effect: Allow
+                Action:
+                  - tnb:*
+                Resource: "*"
+                Sid: "TNBPolicy"
+              - Effect: Allow
+                Condition:
+                  StringEquals:
+                    iam:AWSServiceName:
+                      - eks.amazonaws.com
+                      - eks-nodegroup.amazonaws.com
+                Action:
+                  - iam:CreateServiceLinkedRole
+                Resource: "*"
+                Sid: "TNBAccessSLRPermissions"
+              - Effect: Allow
+                Action:
+                  - ec2:AssociateRouteTable
+                  - ec2:AttachInternetGateway
+                  - ec2:CreateInternetGateway
+                  - ec2:CreateNetworkInterface
+                  - ec2:CreateRoute
+                  - ec2:CreateRouteTable
+                  - ec2:CreateSubnet
+                  - ec2:CreateTags
+                  - ec2:CreateVpc
+                  - ec2:DeleteInternetGateway
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DeleteRoute
+                  - ec2:DeleteRouteTable
+                  - ec2:DeleteSubnet
+                  - ec2:DeleteTags
+                  - ec2:DeleteVpc
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInternetGateways
+                  - ec2:DescribeKeyPairs
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DescribeRouteTables
+                  - ec2:DescribeSecurityGroupRules
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeVpcs
+                  - ec2:DetachInternetGateway
+                  - ec2:DisassociateRouteTable
+                  - ec2:ModifySecurityGroupRules
+                  - ec2:ModifySubnetAttribute
+                  - ec2:ModifyVpcAttribute
+                  - eks:CreateCluster
+                  - eks:ListClusters
+                  - eks:RegisterCluster
+                  - eks:TagResource
+                  - events:DescribeRule
+                  - iam:GetRole
+                  - iam:ListAttachedRolePolicies
+                  - iam:PassRole
+                Resource: "*"
+                Sid: "TNBAccessComputePerms"
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchDeleteBuilds
+                  - codebuild:BatchGetBuilds
+                  - codebuild:CreateProject
+                  - codebuild:DeleteProject
+                  - codebuild:ListBuildsForProject
+                  - codebuild:StartBuild
+                  - codebuild:StopBuild
+                  - events:DeleteRule
+                  - events:PutRule
+                  - events:PutTargets
+                  - events:RemoveTargets
+                  - s3:CreateBucket
+                  - s3:GetBucketAcl
+                  - eks:DescribeNodegroup
+                  - eks:DeleteNodegroup
+                  - eks:AssociateIdentityProviderConfig
+                  - eks:CreateNodegroup
+                  - eks:DeleteCluster
+                  - eks:DeleteNodegroup
+                  - eks:DeregisterCluster
+                  - eks:UntagResource
+                  - eks:DescribeCluster
+                  - eks:ListNodegroups
+                  - s3:PutObject
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateTerminationProtection             
+                Resource:
+                  - arn:aws:events:*:*:rule/tnb*
+                  - arn:aws:codebuild:*:*:project/tnb*
+                  - arn:aws:logs:*:*:log-group:/aws/tnb*
+                  - arn:aws:s3:::tnb*
+                  - arn:aws:eks:*:*:cluster/tnb*
+                  - arn:aws:eks:*:*:nodegroup/tnb*/tnb*/*
+                  - arn:aws:cloudformation:*:*:stack/tnb*
+                Sid: "TNBAccessInfraResourcePerms"
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+
+  #############################################################################
+  # IAM roles for EKS Cluster
+  #############################################################################
+
+  TnbEksClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: This IAM Role is used for the EKS Cluster
+      RoleName: !Ref tnbEksClusterRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - eks.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSVPCResourceController
+
+  #############################################################################
+  # IAM roles for EKS Node Groups
+  #############################################################################
+
+  TnbEksNodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: This IAM Role is used for the EKS Cluster Node Members
+      RoleName: !Ref tnbEksNodeRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: EksIpv6Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:UnassignIpv6Addresses
+                  - ec2:AssignIpv6Addresses
+                Resource: "*"
+        - PolicyName: EKSNodeRoleInlinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                Resource: 'arn:aws:logs:*:*:log-group:/aws/tnb/tnb*'        
+
+  TnbEksMultusRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: This IAM Role is used for the Multus on TNB
+      RoleName: !Ref tnbEksMultusRoleName
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - events.amazonaws.com
+          Action:
+          - sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+            - codebuild.amazonaws.com
+          Action:
+          - sts:AssumeRole          
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: MultusRoleInlinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - codebuild:StartBuild
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                Resource:
+                  - 'arn:aws:codebuild:*:*:project/tnb*'
+                  - 'arn:aws:logs:*:*:log-group:/aws/codebuild/tnb*'
+                  - 'arn:aws:logs:*:*:log-group:/aws/tnb/*'
+              - Effect: Allow
+                Action: 
+                  - ec2:CreateNetworkInterface
+                  - ec2:ModifyNetworkInterfaceAttribute
+                  - ec2:AttachNetworkInterface
+                  - ec2:CreateTags
+                Resource: '*'
+
+  TnbLifecycleHookRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: This IAM Role is used for the TNB Lifecyclehooks
+      RoleName: !Ref tnbLifecycleHookRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess"    
