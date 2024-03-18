@@ -64,7 +64,7 @@ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/whereabo
 echo "Whereabouts installation succeeded"
 
 # Apply NAD
-kubectl apply -f https://raw.githubusercontent.com/sudhshet/myAwsRepo/main/nad-sample.yaml
+kubectl apply -f https://raw.githubusercontent.com/aws-samples/sample-packages-for-aws-tnb/main/deployment-files/nad-sample.yaml
 
 echo "NAD creation succeeded"
 
