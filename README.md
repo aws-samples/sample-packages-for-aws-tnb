@@ -9,7 +9,7 @@ This repo contains sample packages for **Telco Network Builder (TNB)** tests and
 Using Cloudformation - please create IAM roles needed for TNB using the CloudFormation template [tnb-iam-roles.yaml](tnb-iam-roles/tnb-iam-roles.yaml).
 This CloudFormation template creates IAM roles for EKS Cluster, EKS Node Role for EKS Managed Node Group, Multus Role and LifecycleHook role.
 Please note these artifacts use AWS "us-west-2" region, kindly update the NSD file with the desired region of your choice, Availability Zones (two) and your [SSH Keypair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html) name. 
-Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be adjusted to your environment to execute the appropriate post steps - region, admin roles from your environment. 
+Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be adjusted to your environment (e.g. region, admin roles) to execute the appropriate post steps. 
 
 ## Test Procedure
 
