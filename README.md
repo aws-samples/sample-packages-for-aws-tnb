@@ -12,7 +12,7 @@ Please note these zip archive and steps use AWS "us-west-2" region. Additionally
 
 ## Test Procedure
 
-1. Create a zip archive of the content of [Function-Package-NF1 folder](./Function-Package-NF1/) to a zip file e.g. Function-Package-CSAR-NF1.zip. Similarly create a zip archive of the content of [Function-Package-NF2 folder](./Function-Package-NF2/) to a zip file e.g. Function-Package-CSAR-NF2.zip and then create a zip archive of the content of [Network-Package folder](./Network-Package/) to a zip file e.g. Network-Package.zip
+1. Create a zip archive of the content of [Function-Package-NF1 folder](./Function-Package-NF1/) to a zip file e.g. Function-Package-CSAR-NF1.zip. Similarly create a zip archive of the content of [Function-Package-NF2 folder](./Function-Package-NF2/) to a zip file e.g. Function-Package-CSAR-NF2.zip and then create a zip archive of the content of [Network-Package folder](./Network-Package/) to a zip file e.g. Network-Package.zip. Please note when creating the zip files - the vnfd.yaml/Artifacts and nsd.yaml/Artifacts are in the root directory of the zip files. 
 
 2. Create 2 Function Packages on TNB using ***Function-Package-CSAR-NF1.zip*** and ***Function-Package-CSAR-NF2.zip*** zip archives created in the previous step. 
 To create the Function Package using AWS Console, navigate to Telco Network Builder -> Function Packages -> Create Function Package   -> Select the CSAR zip file -> Next and then Create. 
