@@ -48,7 +48,7 @@ To create the Network package using AWS CLI (e.g from Cloud9) - please use the f
 
 ```sh
 np_id=$(aws tnb create-sol-network-package  | jq -r '.id')
-aws tnb put-sol-network-package-content --nsd-info-id $np_id --content-type application/zip --file "fileb://Network-Package.zip" --region $REGION --endpoint-url  "https://tnb.${AWS_REGION}.amazonaws.com"
+aws tnb put-sol-network-package-content --nsd-info-id $np_id --content-type application/zip --file "fileb://Network-Package.zip" --region ${AWS_REGION} --endpoint-url  "https://tnb.${AWS_REGION}.amazonaws.com"
 ```
 
 4. Select the created Network Package and "Create Network Instance"
