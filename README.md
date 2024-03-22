@@ -8,7 +8,8 @@ This repo contains sample packages for **Telco Network Builder (TNB)** tests and
 
 Using Cloudformation - please create IAM roles needed for TNB using the CloudFormation template [tnb-iam-roles.yaml](tnb-iam-roles/tnb-iam-roles.yaml).
 This CloudFormation template creates IAM roles for EKS Cluster, EKS Node Role for EKS Managed Node Group, Multus Role and LifecycleHook role.
-Please note these zip archive and steps use AWS "us-west-2" region. Additionally the hook scripts must be adjusted to your environment to execute the appropriate post steps. 
+Please note these artifacts use AWS "us-west-2" region, kindly update the NSD file with the desired region of your choice, Availability Zones (two) and your SSH Keypair name. 
+Additionally the hook scripts must be adjusted to your environment to execute the appropriate post steps. 
 
 ## Test Procedure
 
@@ -59,7 +60,7 @@ To create a Network instance using AWS CLI (e.g from Cloud9) - please use the fo
 ni_id=$(aws tnb create-sol-network-instance --nsd-info-id $np_id --ns-name "My-Network1" --ns-description "Network Instance1 for the Sample NF" | jq -r '.id')
 ```
 
-5. Select the created Network Instance and select "Actions -> Instantiate" to start deployment of the Network Instance, i.e. creation of AWS infra (can be seen in CloudFormation), execute post-steps defined in the hook scripts in the Network package -  WhereAbouts installation, NAD creation & LB controller installation and finally the corresponding NF deployments (helm install of NF packages).
+5. Select the created Network Instance and select "Actions -> Instantiate" to start deployment of the Network Instance, i.e. creation of AWS infra (can be seen in CloudFormation), execute post-steps defined in the hook scripts in the Network package -  WhereAbouts installation, NAD creation & LB controller installation and finally the corresponding NF deployments (helm install of NF packages). At this step - ensure the Availability Zones are per your AWS region and SSH Keypair name is one created in the Pre-requisites module.
 
 To instantiate the Network instance using AWS CLI (e.g from Cloud9) - please use the following CLI commands -
 
