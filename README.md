@@ -78,7 +78,7 @@ sudo chmod +x installK8sTools.sh
 
 ```
 eksCluster=`eksctl get cluster |grep tnbEksClusterni| awk '{print $1}'`
-aws eks update-kubeconfig --region us-west-2 --name $eksCluster
+aws eks update-kubeconfig --region ${AWS_REGION} --name $eksCluster
 ```
 
 7. Check if NF pods are running on the cluster after the Network Instance instantiation is completed -
