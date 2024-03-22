@@ -67,7 +67,7 @@ To instantiate the Network instance using AWS CLI (e.g from Cloud9) - please use
 aws tnb instantiate-sol-network-instance --ns-instance-id $ni_id
 ```
 
-6. Connect to the Cloudshell/Cloud9 and then install the kubectl, helm and tools using the following commands -
+6. Connect to the Cloudshell/Cloud9 and then install the kubectl, helm and other tools using the following commands -
 
 ``` sh
 sudo curl --silent --location -o installK8sTools.sh https://raw.githubusercontent.com/sudhshet/myAwsRepo/main/installK8sTools.sh
