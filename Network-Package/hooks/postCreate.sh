@@ -39,7 +39,7 @@ aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
 # To install the whereabouts plugins and NetworkAttachmentDefinition creation - access to the cluster is needed. 
 # Thus it is important to assume the role of the admin for the EKS cluster.
 # To Find the role that created the EKS cluster, navigate to Cloudtrail -> Event History -> Filter with Event Name - "CreateCluster". Under Event-Record, capture the arn of the ROLE.  
-	       # "sessionContext": {
+	 # "sessionContext": {
          #    "sessionIssuer": {
          #        "type": "Role",
          #        "principalId": "XXXXXXXXXXXXXXXXXX",
