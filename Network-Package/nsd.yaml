@@ -214,7 +214,7 @@ topology_template:
     EksCluster:
       type: tosca.nodes.AWS.Compute.EKS
       properties:
-        version: "1.26"
+        version: "1.29"
         access: "ALL"
         cluster_role: { get_input: eksClusterRole }
         tags:
@@ -228,7 +228,11 @@ topology_template:
         ebs_csi:
           properties:
             enabled: true
-            version: "v1.16.0-eksbuild.1"        
+            version: "v1.28.1-eksbuild.1"        
+        efs_csi:
+          properties:
+            enabled: true
+            version: "v1.7.6-eksbuild.1"        
       requirements:
         subnets:
         - PubMgmtSubnetAz1
