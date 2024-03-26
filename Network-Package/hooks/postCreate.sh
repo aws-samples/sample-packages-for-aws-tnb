@@ -5,12 +5,12 @@ set -e
 #unset AWS_SECRET_ACCESS_KEY
 
 echo "Testing parameter passing"
-#Passing region information and EKS cluster role
+# Passing region information and EKS cluster role
 echo $EKS_Cluster_Name
 echo $currentregion
 
 myRegion=us-west-2
-#myEKSClusterRole='$EKS_CLUSTER_ROLE'
+# myEKSClusterRole='$EKS_CLUSTER_ROLE'
 
 echo "Post infra hook"
 #Query the cluster name based on tag passed from NSD
@@ -18,15 +18,13 @@ echo "Post infra hook"
 
 myEKS=`aws resourcegroupstaggingapi get-resources --tag-filters Key="Name",Values=$EKS_Cluster_Name --region $myRegion | jq '.ResourceTagMappingList[0].ResourceARN' | grep -o '[^\/]*$' | tr -d '"'`
 
-#Update kubeconfig on the target cluster
+# Update kubeconfig on the target cluster
 
-#Remove role-arn so that it can assume default admin role
-#aws eks --region $myRegion update-kubeconfig --name $myEKS --role-arn $myEKSClusterRole
+# Remove role-arn so that it can assume default admin role
+# aws eks --region $myRegion update-kubeconfig --name $myEKS --role-arn $myEKSClusterRole
 aws eks --region $myRegion update-kubeconfig --name $myEKS
 
 echo "EKS cluster query succeeded"
-
-# cat /root/.kube/config
 
 echo "Getting STS caller Identity"
 
@@ -38,7 +36,37 @@ export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output te
 
 aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
 
-# Assume admin role that created the cluster, this is the role that logged into the console and created the TNB instance
+# To install the whereabouts plugins and NetworkAttachmentDefinition creation - access to the cluster is needed. 
+# Thus it is important to assume the role of the admin for the EKS cluster.
+# To Find the role that created the EKS cluster, navigate to Cloudtrail -> Event History -> Filter with Event Name - "CreateCluster". Under Event-Record, capture the arn of the ROLE.  
+	       # "sessionContext": {
+         #    "sessionIssuer": {
+         #        "type": "Role",
+         #        "principalId": "XXXXXXXXXXXXXXXXXX",
+         #        "arn": "arn:aws:iam::XXXXXXXXXXX:role/ROLENAME",
+         #        "accountId": "XXXXXXXXXXX",
+         #        "userName": "USERNAME"
+         #    },
+# Additionally it is important to establish trust relationship on the EKS cluster admin role for the "TnbEksLifecycleHookRole" IAM role as shown below.
+# {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Sid": "",
+#             "Effect": "Allow",
+#             "Principal": {
+#                 "Service": [
+#                     "codebuild.amazonaws.com",
+#                 ],
+#                 "AWS": [
+#                     "arn:aws:iam::XXXXXXXXXXXX:role/TnbEksLifecycleHookRole"
+#                 ]
+#             },
+#             "Action": "sts:AssumeRole"
+#         }
+#     ]
+# }
+
 CREDS=$(aws sts assume-role \
 --role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/admin \
 --role-session-name $(date '+%Y%m%d%H%M%S%3N') \
@@ -75,15 +103,6 @@ eksctl utils associate-iam-oidc-provider --cluster $myEKS --approve
 aws iam list-open-id-connect-providers | grep $oidc_id | cut -d "/" -f4
 
 echo "OIDC creation succeeded"
-
-# deploy EFS on target cluster
-# kubectl apply -k "github.com/kubernetes-sigs/aws-efs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.4"
-
-# echo "Step 3 EFS succeeded"
-#deploy EBS on target cluster
-# aws eks create-addon --cluster-name $myEKS --addon-name aws-ebs-csi-driver --region $myRegion
-
-# echo "Step 4 EBS succeeded"
 
 # Install Helm
 export VERIFY_CHECKSUM=false
