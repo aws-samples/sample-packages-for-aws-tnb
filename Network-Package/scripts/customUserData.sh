@@ -1,6 +1,6 @@
 #!/bin/bash
 set -o xtrace
-KubeletExtraArguments="--node-labels=is_worker=true --cpu-manager-policy=static"
+KubeletExtraArguments="--cpu-manager-policy=static"
 cat << EOF > /etc/systemd/system/kubelet.service.d/90-kubelet-extra-args.conf
 [Service]
 Environment='USERDATA_EXTRA_ARGS=$KubeletExtraArguments'
