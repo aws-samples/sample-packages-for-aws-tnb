@@ -118,6 +118,27 @@ topology_template:
       requirements:
         vpc: Vpc1
   
+    # Security Group
+    defaultSecGroup:
+      type: tosca.nodes.AWS.Networking.SecurityGroup
+      properties:
+        description: "default security group"
+        name: "defaultSecGroup"
+        tags:
+          - "Name=defaultSecGroup"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+    
+    defaultSecGroupIngressRule:
+      type: tosca.nodes.AWS.Networking.SecurityGroupIngressRule
+      properties:
+        description: "default security group to allow all VPC traffic"
+        cidr_ip: { get_input: Vpc1Cidr }  
+        ip_protocol: "-1"
+      requirements:
+        security_group: defaultSecGroup
+
     # Internet Gateway
     Vpc1Igw:
       type: tosca.nodes.AWS.Networking.InternetGateway
@@ -196,6 +217,7 @@ topology_template:
         environment_variables:
           - "EKS_Cluster_Name=EksCluster"
           - "currentregion=us_west_2"
+          - "DefaultSecurityGroup=defaultSecGroup"
         execution_role: { get_input: LifeCycleHookRole }
 
     PostStepsHookExecution:
@@ -215,6 +237,8 @@ topology_template:
       type: tosca.nodes.AWS.Compute.EKS
       properties:
         version: "1.29"
+        # Uncomment following line for Private EKS cluster
+        # access: "PRIVATE"
         access: "ALL"
         cluster_role: { get_input: eksClusterRole }
         tags:
@@ -256,7 +280,27 @@ topology_template:
           - "Environment=Testing" 
       requirements:
         subnet: MultusSubnet1Az2
-  
+
+    ClusterPlacementGroupAz1:  
+      type: tosca.nodes.AWS.Compute.PlacementGroup
+      properties:
+        # Change this value based on your requirement - CLUSTER | PARTITION | SPREAD_HOST | SPREAD_RACK
+        strategy: CLUSTER
+        # partition_count: Integer
+        tags:
+          - "Name=ClusterPlacementGroupAz1"
+          - "Environment=Testing"
+
+    ClusterPlacementGroupAz2:  
+      type: tosca.nodes.AWS.Compute.PlacementGroup
+      properties:
+        # Change this value based on your requirement - CLUSTER | PARTITION | SPREAD_HOST | SPREAD_RACK
+        strategy: CLUSTER
+        # partition_count: Integer
+        tags:
+          - "Name=ClusterPlacementGroupAz2"
+          - "Environment=Testing"
+
     EksNodeGroupAZ1:
       type: tosca.nodes.AWS.Compute.EKSManagedNode
       capabilities:
@@ -282,6 +326,9 @@ topology_template:
           - PrivK8sSubnetAz1
         network_interfaces:
           - MultusSubnet1Az1ENI
+        security_groups:
+          - defaultSecGroup
+        placement_group: ClusterPlacementGroupAz1
         user_data: CustomUserData
         labels:
           - "is_worker=true"
@@ -311,6 +358,9 @@ topology_template:
           - PrivK8sSubnetAz2
         network_interfaces:
           - MultusSubnet1Az2ENI
+        security_groups:
+          - defaultSecGroup
+        placement_group: ClusterPlacementGroupAz2
         user_data: CustomUserData          
         labels:
           - "is_worker=true"
