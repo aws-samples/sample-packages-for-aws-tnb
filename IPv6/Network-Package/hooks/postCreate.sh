@@ -26,17 +26,11 @@ aws eks --region $myRegion update-kubeconfig --name $myEKS
 
 echo "EKS cluster query succeeded"
 
-echo "Getting STS caller Identity"
-
-aws sts get-caller-identity
-
 echo "Describing the cluster"
 
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 
 aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
-
-# kubectl get pods -n kube-system
 
 # echo "Cluster description succeeded"
 
@@ -54,8 +48,6 @@ multusSubnet2Az1Ipv6CidrPrefix=$(aws ec2 describe-subnets --filters "Name=tag:Na
 multusSubnet2Az2Ipv6CidrPrefix=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=MultusSubnet2Az2" --query "Subnets[*].Ipv6CidrBlockAssociationSet[*].Ipv6CidrBlock" --output text | cut -d "/" -f1)
 sed -i "s/##multusSubnet2Az1Ipv6Cidr##/$multusSubnet2Az1Ipv6CidrPrefix/g" nad-sample-ipv6.yaml
 sed -i "s/##multusSubnet2Az2Ipv6Cidr##/$multusSubnet2Az2Ipv6CidrPrefix/g" nad-sample-ipv6.yaml
-
-cat nad-sample-ipv6.yaml
 
 kubectl apply -f nad-sample-ipv6.yaml
 

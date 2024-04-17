@@ -145,6 +145,14 @@ kube-system   whereabouts-wgv87                                           1/1   
        valid_lft forever preferred_lft forever
     inet6 fe80::65a:f600:4d2:ae1d/64 scope link 
        valid_lft forever preferred_lft forever
+5: net2@if7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default 
+    link/ether 06:2a:21:1a:0c:19 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 10.0.6.11/24 brd 10.0.6.255 scope global net2
+       valid_lft forever preferred_lft forever
+    inet6 2600:1f14:3af4:8d00::11/64 scope global 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::62a:2100:21a:c19/64 scope link 
+       valid_lft forever preferred_lft forever       
 [cloudshell-user@ip-10-130-40-1 ~]$ 
 ```
 
