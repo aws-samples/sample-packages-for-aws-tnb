@@ -148,7 +148,7 @@ kube-system   whereabouts-wgv87                                           1/1   
 [cloudshell-user@ip-10-130-40-1 ~]$ 
 ```
 
-Please follow the [link](./IPv6/README.md) for artifacts and test procedure to validate IPv6 capabilites (multus) with TNB.
+Please follow the [link](./IPv6/README.md) for artifacts and test procedure to validate **IPv6 capabilites** (multus) with TNB.
 
 # Cleanup
 

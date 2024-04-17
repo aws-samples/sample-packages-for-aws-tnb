@@ -48,7 +48,7 @@ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/whereabo
 echo "Whereabouts installation succeeded"
 
 # Copy the NAD, update the CIDR and apply it
-curl -O https://raw.githubusercontent.com/aws-samples/sample-packages-for-aws-tnb/main/deployment-files/nad-sample-ipv6.yaml
+curl -O https://raw.githubusercontent.com/aws-samples/sample-packages-for-aws-tnb/main/IPv6/deployment-files/nad-sample-ipv6.yaml
 
 multusSubnet2Az1Ipv6CidrPrefix=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=MultusSubnet2Az1" --query "Subnets[*].Ipv6CidrBlockAssociationSet[*].Ipv6CidrBlock" --output text | cut -d "/" -f1)
 multusSubnet2Az2Ipv6CidrPrefix=$(aws ec2 describe-subnets --filters "Name=tag:Name,Values=MultusSubnet2Az2" --query "Subnets[*].Ipv6CidrBlockAssociationSet[*].Ipv6CidrBlock" --output text | cut -d "/" -f1)
