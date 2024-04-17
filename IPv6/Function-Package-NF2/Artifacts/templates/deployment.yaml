@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demonf.fullname" . }}-multitool
+  labels:
+    app: multitool
+  {{- include "demonf.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.multitool.replicas }}
+  selector:
+    matchLabels:
+      app: multitool
+    {{- include "demonf.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: multitool
+      {{- include "demonf.selectorLabels" . | nindent 8 }}
+      annotations:
+        k8s.v1.cni.cncf.io/networks: {{ .Values.multitool.multitool.networks }}
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - "trap : TERM INT; sleep infinity & wait"
+        env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.multitool.multitool.image.repository }}:{{ .Values.multitool.multitool.image.tag
+          | default .Chart.AppVersion }}
+        name: multitool
+        resources: {{- toYaml .Values.multitool.multitool.resources | nindent 10 }}
+      nodeSelector: {{- toYaml .Values.multitool.nodeSelector | nindent 8 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demonf.fullname" . }}-nginx
+  labels:
+    app: nginx
+  {{- include "demonf.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.nginx.replicas }}
+  selector:
+    matchLabels:
+      app: nginx
+    {{- include "demonf.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: nginx
+      {{- include "demonf.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.nginx.nginx.image.repository }}:{{ .Values.nginx.nginx.image.tag
+          | default .Chart.AppVersion }}
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {{- toYaml .Values.nginx.nginx.resources | nindent 10 }}
+      nodeSelector: {{- toYaml .Values.nginx.nodeSelector | nindent 8 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demonf.fullname" . }}-sctpserver
+  labels:
+    app: sctpserver
+  {{- include "demonf.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.sctpserver.replicas }}
+  selector:
+    matchLabels:
+      app: sctpserver
+    {{- include "demonf.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: sctpserver
+      {{- include "demonf.selectorLabels" . | nindent 8 }}
+      annotations:
+        k8s.v1.cni.cncf.io/networks: {{ .Values.sctpserver.sctpserver.networks }}
+    spec:
+      containers:
+      - command:
+        - socat
+        - -d
+        - SCTP-LISTEN:11111,fork,reuseaddr
+        - OPEN:/tmp/test.log,creat,append
+        env:
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.sctpserver.sctpserver.image.repository }}:{{ .Values.sctpserver.sctpserver.image.tag
+          | default .Chart.AppVersion }}
+        livenessProbe:
+          exec:
+            command:
+            - echo
+            - hi
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        name: sctpserver
+        ports:
+        - containerPort: 11111
+          protocol: SCTP
+        resources: {{- toYaml .Values.sctpserver.sctpserver.resources | nindent 10 }}
+      nodeSelector: {{- toYaml .Values.sctpserver.nodeSelector | nindent 8 }}

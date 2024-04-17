@@ -1,8 +1,8 @@
-# Telco Network Builder (TNB) deployment test procedure
+# Telco Network Builder (TNB) deployment test procedure (IPv6)
 
-This repo contains sample packages for **Telco Network Builder (TNB)** tests and procedures to deploy some demo NFs (with multus networks) using TNB. Following architecture is being implemented and tested in this setup using Telco Network Builder ([TNB](https://console.aws.amazon.com/tnb/)). In this test procedure, we shall deploy 2 Demo Network Functions (NF's) on a EKS cluster containing 2 EKS Managed NodeGroup (with 1 Multus subnet) in each Availability zone.
+This repo contains sample packages for **Telco Network Builder (TNB)** tests and procedures to deploy some demo NFs (with multus networks) using TNB. Following architecture is being implemented and tested in this setup using Telco Network Builder ([TNB](https://console.aws.amazon.com/tnb/)). In this test procedure, we shall deploy 2 Demo Network Functions (NF's) on a EKS cluster containing 2 EKS Managed NodeGroup (with 1 Multus IPv4 subnet and another Dual stack(IPv4/IPv6) Multus subnet) in each Availability zone.
 
-![Test-Architecture](images/TNB-Sample-Config.png)
+![Test-Architecture](./images/TNB-Sample-Config.png)
 
 ## Pre-Requisite
 
@@ -147,8 +147,6 @@ kube-system   whereabouts-wgv87                                           1/1   
        valid_lft forever preferred_lft forever
 [cloudshell-user@ip-10-130-40-1 ~]$ 
 ```
-
-Please follow the [link](./IPv6/README.md) for artifacts and test procedure to validate IPv6 capabilites (multus) with TNB.
 
 # Cleanup
 

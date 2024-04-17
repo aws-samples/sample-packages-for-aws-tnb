@@ -1,0 +1,20 @@
+tosca_definitions_version: tnb_simple_yaml_1_0
+
+topology_template:
+
+  node_templates:
+
+    DemoNF1:
+      type: tosca.nodes.AWS.VNF
+      properties:
+        descriptor_id: "6666abcd-c82a-479d-ab87-a1b2c3d4e5f6"
+        descriptor_version: "1.0.0"
+        descriptor_name: "Demo NF 1.0.0"
+        provider: "AWS"
+      requirements:
+        helm: HelmImage
+
+    HelmImage:
+      type: tosca.nodes.AWS.Artifacts.Helm
+      properties:
+        implementation: "./Artifacts"

@@ -1,0 +1,108 @@
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: nad-multussubnet1az1-ipv4
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "ipvlan",
+      "master": "eth2",
+      "mode": "l2",
+      "ipam": {
+        "type": "whereabouts",
+        "datastore": "kubernetes",
+        "kubernetes": { "kubeconfig": "/etc/cni/net.d/whereabouts.d/whereabouts.kubeconfig" },
+        "range": "10.0.4.10-10.0.4.50/24",
+        "routes": [
+          { "dst": "10.0.0.0/24", "gw": "10.0.4.1" },
+          { "dst": "10.0.5.0/24", "gw": "10.0.4.1" }
+          ],
+        "log_file" : "/tmp/whereabouts.log",
+        "log_level" : "debug",
+        "gateway": "10.0.4.1"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: nad-multussubnet1az2-ipv4
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "ipvlan",
+      "master": "eth2",
+      "mode": "l2",
+      "ipam": {
+        "type": "whereabouts",
+        "datastore": "kubernetes",
+        "kubernetes": { "kubeconfig": "/etc/cni/net.d/whereabouts.d/whereabouts.kubeconfig" },
+        "range": "10.0.5.10-10.0.5.50/24",
+        "routes": [
+            { "dst": "10.0.1.0/24" },
+            { "dst": "10.0.4.0/24" }
+          ],
+        "log_file" : "/tmp/whereabouts.log",
+        "log_level" : "debug",
+        "gateway": "10.0.5.1"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: nad-multussubnet2az1-ipv4ipv6
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "ipvlan",
+      "master": "eth3",
+      "mode": "l2",
+      "ipam": {
+        "type": "whereabouts",
+        "datastore": "kubernetes",
+        "kubernetes": { "kubeconfig": "/etc/cni/net.d/whereabouts.d/whereabouts.kubeconfig" },
+        "ipRanges": [{
+            "range": "10.0.6.10-10.0.6.50/24"
+          }, {
+            "range": "##multusSubnet2Az1Ipv6Cidr##10-##multusSubnet2Az1Ipv6Cidr##50/64"
+        }],
+        "routes": [
+          { "dst": "10.0.0.0/24", "gw": "10.0.6.1" },
+          { "dst": "10.0.7.0/24", "gw": "10.0.6.1" },
+          { "dst": "##multusSubnet2Az2Ipv6Cidr##/64", "gw": "##multusSubnet2Az1Ipv6Cidr##1" }
+          ],
+        "log_file" : "/tmp/whereabouts.log",
+        "log_level" : "debug"
+      }
+    }'
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: nad-multussubnet2az2-ipv4ipv6
+spec:
+  config: '{
+      "cniVersion": "0.3.0",
+      "type": "ipvlan",
+      "master": "eth3",
+      "mode": "l2",
+      "ipam": {
+        "type": "whereabouts",
+        "datastore": "kubernetes",
+        "kubernetes": { "kubeconfig": "/etc/cni/net.d/whereabouts.d/whereabouts.kubeconfig" },
+        "ipRanges": [{
+            "range": "10.0.7.10-10.0.7.50/24"
+          }, {
+            "range": "##multusSubnet2Az2Ipv6Cidr##10-##multusSubnet2Az2Ipv6Cidr##50/64"
+        }],
+        "routes": [
+            { "dst": "10.0.1.0/24", "gw": "10.0.7.1" },
+            { "dst": "10.0.6.0/24", "gw": "10.0.7.1" },
+            { "dst": "##multusSubnet2Az1Ipv6Cidr##/64", "gw": "##multusSubnet2Az2Ipv6Cidr##1" }
+          ],
+        "log_file" : "/tmp/whereabouts.log",
+        "log_level" : "debug"
+      }
+    }'
+---

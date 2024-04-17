@@ -1,0 +1,48 @@
+kubernetesClusterDomain: cluster.local
+multitool:
+  multitool:
+    networks: nad-multussubnet1az1-ipv4, nad-multussubnet2az1-ipv4ipv6
+    image:
+      repository: praqma/network-multitool
+      tag: "extra"
+    resources:
+      limits:
+        cpu: "250m"
+        memory: 128Mi
+      requests:
+        cpu: "250m"
+        memory: 128Mi
+  nodeSelector:
+    topology.kubernetes.io/zone: us-west-2a
+  replicas: 2
+nginx:
+  nginx:
+    image:
+      repository: nginx
+      tag: "1.23.4"
+    resources:
+      limits:
+        cpu: "250m"
+        memory: 128Mi
+      requests:
+        cpu: "250m"
+        memory: 128Mi
+  nodeSelector:
+    topology.kubernetes.io/zone: us-west-2a
+  replicas: 2
+sctpserver:
+  nodeSelector:
+    topology.kubernetes.io/zone: us-west-2a
+  replicas: 2
+  sctpserver:
+    networks: nad-multussubnet1az1-ipv4, nad-multussubnet2az1-ipv4ipv6
+    image:
+      repository: alpine/socat
+      tag: "1.7.4.4-r0"
+    resources:
+      limits:
+        cpu: "250m"
+        memory: 128Mi
+      requests:
+        cpu: "250m"
+        memory: 128Mi
