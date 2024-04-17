@@ -36,50 +36,6 @@ export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output te
 
 aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
 
-# To install the whereabouts plugins and for NetworkAttachmentDefinition creation - access to the cluster is needed. 
-# Thus it is essential to assume the role of the admin for the EKS cluster.
-# To Find the role that created the EKS cluster, navigate to Cloudtrail -> Event History -> Filter with Event Name - "CreateCluster". Under Event-Record, capture the arn of the ROLE.  
-	 # "sessionContext": {
-         #    "sessionIssuer": {
-         #        "type": "Role",
-         #        "principalId": "XXXXXXXXXXXXXXXXXX",
-         #        "arn": "arn:aws:iam::XXXXXXXXXXX:role/ROLENAME",
-         #        "accountId": "XXXXXXXXXXX",
-         #        "userName": "USERNAME"
-         #    },
-# Additionally it is important to establish trust relationship on the EKS cluster admin role for the "TnbEksLifecycleHookRole" IAM role as shown below.
-# {
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Sid": "",
-#             "Effect": "Allow",
-#             "Principal": {
-#                 "Service": [
-#                     "codebuild.amazonaws.com",
-#                 ],
-#                 "AWS": [
-#                     "arn:aws:iam::XXXXXXXXXXXX:role/TnbEksLifecycleHookRole"
-#                 ]
-#             },
-#             "Action": "sts:AssumeRole"
-#         }
-#     ]
-# }
-
-CREDS=$(aws sts assume-role \
---role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/admin \
---role-session-name $(date '+%Y%m%d%H%M%S%3N') \
---duration-seconds 3600 \
---query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' \
---output text)
-export AWS_DEFAULT_REGION="us-west-2"
-export AWS_ACCESS_KEY_ID=$(echo $CREDS | cut -d' ' -f1)
-export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | cut -d' ' -f2)
-export AWS_SESSION_TOKEN=$(echo $CREDS | cut -d' ' -f3)
-
-aws sts get-caller-identity
-
 # kubectl get pods -n kube-system
 
 # echo "Cluster description succeeded"

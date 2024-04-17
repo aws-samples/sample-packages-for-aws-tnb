@@ -259,6 +259,15 @@ topology_template:
         - PubMgmtSubnetAz2
         - PrivK8sSubnetAz1
         - PrivK8sSubnetAz2
+
+    EKSAuthMapRoles:
+      type: tosca.nodes.AWS.Compute.EKS.AuthRole
+      properties:
+        role_mappings:
+        - arn: { get_input: LifeCycleHookRole }
+      requirements:
+        clusters: 
+        - EksCluster
   
     # Device Index must start with 2
     MultusSubnet1Az1ENI:
