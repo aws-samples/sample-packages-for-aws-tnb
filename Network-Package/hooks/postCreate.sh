@@ -10,35 +10,19 @@ echo $EKS_Cluster_Name
 echo $currentregion
 
 myRegion=us-west-2
-# myEKSClusterRole='$EKS_CLUSTER_ROLE'
 
-echo "Post infra hook"
-#Query the cluster name based on tag passed from NSD
-# aws resourcegroupstaggingapi get-resources --tag-filters Key="Name",Values=$EKS_Cluster_Name --region $myRegion| jq '.ResourceTagMappingList[0].ResourceARN' | grep -o '[^\/]*$' | tr -d '"'
-
+# Query the cluster name based on tag passed from NSD
 myEKS=`aws resourcegroupstaggingapi get-resources --tag-filters Key="Name",Values=$EKS_Cluster_Name --region $myRegion | jq '.ResourceTagMappingList[0].ResourceARN' | grep -o '[^\/]*$' | tr -d '"'`
 
 # Update kubeconfig on the target cluster
-
-# Remove role-arn so that it can assume default admin role
-# aws eks --region $myRegion update-kubeconfig --name $myEKS --role-arn $myEKSClusterRole
 aws eks --region $myRegion update-kubeconfig --name $myEKS
 
-echo "EKS cluster query succeeded"
-
 echo "Getting STS caller Identity"
-
 aws sts get-caller-identity
 
 echo "Describing the cluster"
-
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-
 aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
-
-# kubectl get pods -n kube-system
-
-# echo "Cluster description succeeded"
 
 # Install Whereabouts
 kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/whereabouts/master/doc/crds/daemonset-install.yaml

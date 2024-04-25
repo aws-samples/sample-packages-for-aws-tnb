@@ -1,0 +1,442 @@
+tosca_definitions_version: tosca_simple_profile_for_nfv_1_0_0
+description: Demo NF example
+
+vnfds:
+  - descriptor_id: "4444abcd-c82a-479d-ab87-a1b2c3d4e5f6"
+    namespace: "demonf1"
+  - descriptor_id: "5555abcd-c82a-479d-ab87-a1b2c3d4e5f6"
+    namespace: "demonf2"
+
+topology_template:
+
+  inputs:
+    keyPair:
+      type: String
+      description: Name of the Key Pair
+      default: "us-west-2-keypair"
+
+    instanceType:
+      type: String
+      description: Name of the EC2 instance type for the EKS workers
+      default: "m7i.4xlarge"
+
+    myRegion:
+      type: String
+      description: Name of the region
+      default: "us-west-2"
+
+    AZ1:
+      type: String
+      description: First AZ where NF must be deployed
+      default: "us-west-2a"
+      
+    AZ2:
+      type: String
+      description: Second AZ where NF must be deployed
+      default: "us-west-2b"
+     
+    eksClusterRole:
+      type: String
+      description: "EKS Cluster IAM role"
+      default: "arn:aws:iam::${AWS::TNB::AccountId}:role/TnbEksClusterRole"
+
+    eksNodeRole:
+      type: String
+      description: "EKS Cluster IAM role"
+      default: "arn:aws:iam::${AWS::TNB::AccountId}:role/TnbEksNodeRole"
+
+    eksMultusRole:
+      type: String
+      description: "EKS Cluster IAM role"
+      default: "arn:aws:iam::${AWS::TNB::AccountId}:role/TnbEksMultusRole"
+    
+    LifeCycleHookRole:
+      type: String
+      description: "LifeCycle Hook role"
+      default: "arn:aws:iam::${AWS::TNB::AccountId}:role/TnbEksLifecycleHookRole"
+            
+    Vpc1Cidr:
+      type: String
+      description: "CIDR Block for Main VPC"
+      default: "10.0.0.0/16"
+
+    igwDestCidr:
+      type: String
+      description: "CIDR to add towards IGW in the Route table"
+      default: "0.0.0.0/0"
+    
+    PubMgmtSubnetAz1Cidr:
+      type: String
+      description: "CIDR block for the Public Subnet in AZ1"
+      default: "10.0.0.0/24"
+    
+    PubMgmtSubnetAz2Cidr:
+      type: String
+      description: "CIDR block for the Public Subnet in AZ2"
+      default: "10.0.1.0/24"
+
+    PrivK8sSubnetAz1Cidr:
+      type: String
+      description: "CIDR block for the Private Subnet in AZ1. This will be used for the main K8s network"
+      default: "10.0.2.0/24"
+
+    PrivK8sSubnetAz2Cidr:
+      type: String
+      description: "CIDR block for the Private Subnet in AZ1. This will be used for the main K8s network"
+      default: "10.0.3.0/24"
+
+    MultusSubnet1Az1Cidr:
+      type: String
+      description: "CIDR Block for Multus Subnet in AZ1"
+      default: "10.0.4.0/24"
+
+    MultusSubnet1Az2Cidr:
+      type: String
+      description: "CIDR Block for Multus Subnet in AZ2"
+      default: "10.0.5.0/24"
+
+    MultusSubnet2Az1Cidr:
+      type: String
+      description: "CIDR Block for Multus Subnet in AZ1"
+      default: "10.0.6.0/24"
+
+    MultusSubnet2Az2Cidr:
+      type: String
+      description: "CIDR Block for Multus Subnet in AZ2"
+      default: "10.0.7.0/24"
+
+  node_templates:
+    DemoNFNS:
+      type: tosca.nodes.AWS.NS
+      properties:
+        descriptor_id: "a1b2c3d4-c8b5-4dc3-9ef0-555556abcdef"
+        descriptor_version: "1.0.0"
+        descriptor_name: "NS1"
+        
+    Vpc1:
+      type: tosca.nodes.AWS.Networking.VPC
+      properties:
+        cidr_block: { get_input: Vpc1Cidr }
+        dns_support: true
+        
+    DefRouteTableVpc1:
+      type: tosca.nodes.AWS.Networking.RouteTable
+      properties: 
+        tags:
+          - "Name=DefRouteTableVpc1"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+  
+    # Security Group
+    defaultSecGroup:
+      type: tosca.nodes.AWS.Networking.SecurityGroup
+      properties:
+        description: "default security group"
+        name: "defaultSecGroup"
+        tags:
+          - "Name=defaultSecGroup"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+    
+    defaultSecGroupIngressRule:
+      type: tosca.nodes.AWS.Networking.SecurityGroupIngressRule
+      properties:
+        description: "default security group to allow all VPC traffic"
+        cidr_ip: { get_input: Vpc1Cidr }  
+        ip_protocol: "-1"
+      requirements:
+        security_group: defaultSecGroup
+
+    # Internet Gateway
+    Vpc1Igw:
+      type: tosca.nodes.AWS.Networking.InternetGateway
+      capabilities:
+        routing:
+          properties:
+            dest_cidr: { get_input: igwDestCidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+              
+    PubMgmtSubnetAz1:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PUBLIC"
+        availability_zone: { get_input: AZ1 }
+        cidr_block: { get_input: PubMgmtSubnetAz1Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    PubMgmtSubnetAz2:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PUBLIC"
+        availability_zone: { get_input: AZ2 }
+        cidr_block: { get_input: PubMgmtSubnetAz2Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+  
+    PrivK8sSubnetAz1:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PUBLIC"
+        availability_zone: { get_input: AZ1 }
+        cidr_block: { get_input: PrivK8sSubnetAz1Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    PrivK8sSubnetAz2:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PUBLIC"
+        availability_zone: { get_input: AZ2 }
+        cidr_block: { get_input: PrivK8sSubnetAz2Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    MultusSubnet1Az1:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PRIVATE"
+        availability_zone: { get_input: AZ1 }
+        cidr_block: { get_input: MultusSubnet1Az1Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    MultusSubnet1Az2:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PRIVATE"
+        availability_zone: { get_input: AZ2 }
+        cidr_block: { get_input: MultusSubnet1Az2Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    MultusSubnet2Az1:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PRIVATE"
+        availability_zone: { get_input: AZ1 }
+        cidr_block: { get_input: MultusSubnet2Az1Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+        
+    MultusSubnet2Az2:
+      type: tosca.nodes.AWS.Networking.Subnet
+      properties:
+        type: "PRIVATE"
+        availability_zone: { get_input: AZ2 }
+        cidr_block: { get_input: MultusSubnet2Az2Cidr }
+      requirements:
+        route_table: DefRouteTableVpc1
+        vpc: Vpc1
+
+    PostStepsHookScript:
+      type: tosca.nodes.AWS.HookDefinition.Bash
+      properties:
+        implementation: './hooks/postCreate.sh'
+        environment_variables:
+          - "EKS_Cluster_Name=EksCluster"
+          - "currentregion=us_west_2"
+          - "DefaultSecurityGroup=defaultSecGroup"
+          - "EksNodeGroup1=EksNodeGroupAZ1"
+          - "EksNodeGroup2=EksNodeGroupAZ2"
+        execution_role: { get_input: LifeCycleHookRole }
+
+    PostStepsHookExecution:
+      type: tosca.nodes.AWS.HookExecution
+      requirements:
+        definition: PostStepsHookScript
+        vpc: Vpc1
+
+    CustomUserData:
+      type: tosca.nodes.AWS.Compute.UserData
+      properties:
+        content_type: "text/x-shellscript"
+        implementation: "./scripts/customUserData.sh"
+        
+  # Adding both PubMgmt and PrivK8s subnets - adds 2 ENIs from the same subnet PrivK8s. 
+    EksCluster:
+      type: tosca.nodes.AWS.Compute.EKS
+      properties:
+        version: "1.29"
+        # Uncomment following line for Private EKS cluster
+        # access: "PRIVATE"
+        access: "ALL"
+        cluster_role: { get_input: eksClusterRole }
+        tags:
+          - "Name=EksCluster"
+          - "Environment=Testing"
+      capabilities:
+        multus:
+          properties:
+            enabled: true
+            multus_role: { get_input: eksMultusRole }
+        ebs_csi:
+          properties:
+            enabled: true
+            version: "v1.29.1-eksbuild.1"        
+      requirements:
+        subnets:
+        - PubMgmtSubnetAz1
+        - PubMgmtSubnetAz2
+        - PrivK8sSubnetAz1
+        - PrivK8sSubnetAz2
+
+    EKSAuthMapRoles:
+      type: tosca.nodes.AWS.Compute.EKS.AuthRole
+      properties:
+        role_mappings:
+        - arn: { get_input: LifeCycleHookRole }
+      requirements:
+        clusters: 
+        - EksCluster
+  
+    # Device Index must start with 2
+    MultusSubnet1Az1ENI:
+      type: tosca.nodes.AWS.Networking.ENI
+      properties:
+        device_index: 2
+        tags:
+          - "Name=MultusSubnet1Az1ENI"
+          - "Environment=Testing" 
+      requirements:
+        subnet: MultusSubnet1Az1
+  
+    MultusSubnet1Az2ENI:
+      type: tosca.nodes.AWS.Networking.ENI
+      properties:
+        device_index: 2
+        tags:
+          - "Name=MultusSubnet1Az2ENI"
+          - "Environment=Testing" 
+      requirements:
+        subnet: MultusSubnet1Az2
+
+    MultusSubnet2Az1ENI:
+      type: tosca.nodes.AWS.Networking.ENI
+      properties:
+        device_index: 3
+        tags:
+          - "Name=MultusSubnet2Az1ENI"
+          - "Environment=Testing" 
+      requirements:
+        subnet: MultusSubnet2Az1
+  
+    MultusSubnet2Az2ENI:
+      type: tosca.nodes.AWS.Networking.ENI
+      properties:
+        device_index: 3
+        tags:
+          - "Name=MultusSubnet2Az2ENI"
+          - "Environment=Testing" 
+      requirements:
+        subnet: MultusSubnet2Az2
+
+    ClusterPlacementGroupAz1:  
+      type: tosca.nodes.AWS.Compute.PlacementGroup
+      properties:
+        # Change this value based on your requirement - CLUSTER | PARTITION | SPREAD_HOST | SPREAD_RACK
+        strategy: CLUSTER
+        # partition_count: Integer
+        tags:
+          - "Name=ClusterPlacementGroupAz1"
+          - "Environment=Testing"
+
+    ClusterPlacementGroupAz2:  
+      type: tosca.nodes.AWS.Compute.PlacementGroup
+      properties:
+        # Change this value based on your requirement - CLUSTER | PARTITION | SPREAD_HOST | SPREAD_RACK
+        strategy: CLUSTER
+        # partition_count: Integer
+        tags:
+          - "Name=ClusterPlacementGroupAz2"
+          - "Environment=Testing"
+
+    EksNodeGroupAZ1:
+      type: tosca.nodes.AWS.Compute.EKSManagedNode
+      capabilities:
+        compute:
+          properties:
+            ami_type: "AL2_x86_64"
+            instance_types:
+              - { get_input: instanceType }
+            key_pair: { get_input: keyPair }
+        scaling:
+          properties:
+            desired_size: 1
+            min_size: 1
+            max_size: 3
+      properties:
+        node_role: { get_input: eksNodeRole }
+        tags:
+          - "Name=EksNodeGroupAZ1"
+          - "Environment=Testing"
+      requirements:
+        cluster: EksCluster
+        subnets:
+          - PrivK8sSubnetAz1
+        network_interfaces:
+          - MultusSubnet1Az1ENI
+          - MultusSubnet2Az1ENI
+        security_groups:
+          - defaultSecGroup
+        placement_group: ClusterPlacementGroupAz1
+        user_data: CustomUserData
+        labels:
+          - "is_worker=true"
+          - "sriov=enabled"
+
+    EksNodeGroupAZ2:
+      type: tosca.nodes.AWS.Compute.EKSManagedNode
+      capabilities:
+        compute:
+          properties:
+            ami_type: "AL2_x86_64"
+            instance_types:
+              - { get_input: instanceType }
+            key_pair: { get_input: keyPair }
+        scaling:
+          properties:
+            desired_size: 1
+            min_size: 1
+            max_size: 3
+      properties:
+        node_role: { get_input: eksNodeRole }
+        tags:
+          - "Name=EksNodeGroupAZ2"
+          - "Environment=Testing" 
+      requirements:
+        cluster: EksCluster
+        subnets:
+          - PrivK8sSubnetAz2
+        network_interfaces:
+          - MultusSubnet1Az2ENI
+          - MultusSubnet2Az2ENI
+        security_groups:
+          - defaultSecGroup
+        placement_group: ClusterPlacementGroupAz2
+        user_data: CustomUserData          
+        labels:
+          - "is_worker=true"
+          - "sriov=enabled"
+
+    DemoNFHelmDeploy:
+      type: tosca.nodes.AWS.Deployment.VNFDeployment
+      requirements:
+        cluster: EksCluster
+        vnfs:
+          - demonf1.DemoNF1
+          - demonf2.DemoNF2
+      interfaces:
+        Hook:
+          pre_create: PostStepsHookExecution

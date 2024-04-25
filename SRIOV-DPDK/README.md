@@ -1,15 +1,18 @@
-# Telco Network Builder (TNB) deployment test procedure (IPv6)
+# Telco Network Builder (TNB) deployment test procedure (SRIOV)
 
-This repo contains sample packages for **Telco Network Builder (TNB)** tests and procedures to deploy some demo NFs (with multus networks) using TNB. Following architecture is being implemented and tested in this setup using Telco Network Builder ([TNB](https://console.aws.amazon.com/tnb/)). In this test procedure, we shall deploy 2 Demo Network Functions (NF's) on a EKS cluster containing 2 EKS Managed NodeGroup (with 1 Multus IPv4 subnet and another Dual stack(IPv4/IPv6) Multus subnet) in each Availability zone.
+This repo contains sample packages for **Telco Network Builder (TNB)** tests and procedures to deploy some demo NFs (with multus networks) using TNB. Following architecture is being implemented and tested in this setup using Telco Network Builder ([TNB](https://console.aws.amazon.com/tnb/)). In this test procedure, we shall deploy 2 Demo Network Functions (NF's) on a EKS cluster containing 2 EKS Managed NodeGroup (with 1 Multus IPv4 subnet and another Multus for SRIOV DPDK) in each Availability zone. SRIOV implementation is based on the [blog post article](https://aws.amazon.com/blogs/industries/automate-packet-acceleration-configuration-using-dpdk-on-amazon-eks/).
 
-![Test-Architecture](./images/TNB-Sample-Config_IPv6.png)
+![Test-Architecture](./images/TNB-Sample-Config_SRIOV.png)
 
 ## Pre-Requisite
 
-Using Cloudformation - please create IAM roles needed for TNB using the CloudFormation template [tnb-iam-roles.yaml](tnb-iam-roles/tnb-iam-roles.yaml).
+Using Cloudformation - please create IAM roles needed for TNB using the CloudFormation template [tnb-iam-roles.yaml](tnb-iam-roles/tnb-iam-roles-sriov.yaml) (Please note - for SRIOV there are some additional policies added to the TnbEksNodeRole IAM role).
 This CloudFormation template creates IAM roles for EKS Cluster, EKS Node Role for EKS Managed Node Group, Multus Role and LifecycleHook role.
 Please note these artifacts use AWS "us-west-2" region, kindly update the NSD file with the desired region of your choice, Availability Zones (two) and your [SSH Keypair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html) name.
 Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be adjusted to your environment (e.g. region) to execute the appropriate post steps.
+
+Upload the files in [dpdk-script](./dpdk-scripts/) folder to a S3 bucket and ensure this S3 bucket name is referenced in the [userData script](./Network-Package/scripts/customUserData.sh) S3BucketName parameter.
+Please note the SRIOV multus interface configurations are done via the [userData script](./Network-Package/scripts/customUserData.sh), thus please ensure to modify the interface index, count, CPUAffinity and IRQ_BANNED_CPU parameter configurations for your chosen instance type & configuration.
 
 ## Test Procedure
 
@@ -81,7 +84,7 @@ Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be a
    aws eks update-kubeconfig --region ${AWS_REGION} --name $eksCluster
    ```
 
-7. Check if NF pods are running on the cluster after the Network Instance instantiation is completed -
+7. Check if NF pods & SRIOV Device plugin pods are running on the cluster after the Network Instance instantiation is completed -
 
    ```sh
    kubectl get pods -A
@@ -91,68 +94,65 @@ Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be a
 
    ```sh
    [cloudshell-user@ip-10-130-40-1 ~]$ kubectl get pods -A
-   NAMESPACE     NAME                                                        READY   STATUS    RESTARTS      AGE
-   default       tnbdemonf1ni0a14b11e0c7a6a064-multitool-89cb5bcb9-889tb     1/1     Running   0             12m
-   default       tnbdemonf1ni0a14b11e0c7a6a064-multitool-89cb5bcb9-mkvmz     1/1     Running   0             12m
-   default       tnbdemonf1ni0a14b11e0c7a6a064-nginx-759c78675c-pmpvr        1/1     Running   0             12m
-   default       tnbdemonf1ni0a14b11e0c7a6a064-nginx-759c78675c-rvz2q        1/1     Running   0             12m
-   default       tnbdemonf1ni0a14b11e0c7a6a064-sctpserver-5f4d9585b5-dmqdx   1/1     Running   0             12m
-   default       tnbdemonf1ni0a14b11e0c7a6a064-sctpserver-5f4d9585b5-mpqgl   1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-multitool-697c97f5f4-gktsv    1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-multitool-697c97f5f4-k4m5v    1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-nginx-5cccc896d9-5mst9        1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-nginx-5cccc896d9-khpgd        1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-sctpserver-59dc7bb966-7ktk9   1/1     Running   0             12m
-   default       tnbdemonf2ni0a14b11e0c7a6a064-sctpserver-59dc7bb966-b84v5   1/1     Running   0             12m
-   kube-system   aws-load-balancer-controller-79d779594c-b6n5z               1/1     Running   0             12m
-   kube-system   aws-load-balancer-controller-79d779594c-k8cld               1/1     Running   0             12m
-   kube-system   aws-node-fgbbd                                              2/2     Running   0             16m
-   kube-system   aws-node-vjbdv                                              2/2     Running   0             15m
-   kube-system   coredns-8fd5d4478-hzm7j                                     1/1     Running   0             21m
-   kube-system   coredns-8fd5d4478-lnszn                                     1/1     Running   0             21m
-   kube-system   ebs-csi-controller-56ccf94676-wbtkx                         6/6     Running   0             18m
-   kube-system   ebs-csi-controller-56ccf94676-xzgzg                         6/6     Running   0             18m
-   kube-system   ebs-csi-node-7954t                                          3/3     Running   0             15m
-   kube-system   ebs-csi-node-m89nc                                          3/3     Running   0             16m
-   kube-system   kube-multus-ds-nw8dg                                        1/1     Running   1 (13m ago)   13m
-   kube-system   kube-multus-ds-rstkk                                        1/1     Running   1 (13m ago)   13m
-   kube-system   kube-proxy-255kk                                            1/1     Running   0             16m
-   kube-system   kube-proxy-njmfm                                            1/1     Running   0             15m
-   kube-system   whereabouts-7ntkh                                           1/1     Running   0             12m
-   kube-system   whereabouts-wgv87                                           1/1     Running   0             12m
+   NAMESPACE     NAME                                                        READY   STATUS    RESTARTS        AGE
+   default       tnbdemonf1ni0370861f2295f97c2-multitool-78fb8bd88d-k2d2w    1/1     Running   0               5m9s
+   default       tnbdemonf1ni0370861f2295f97c2-multitool-78fb8bd88d-vjclv    1/1     Running   0               5m9s
+   default       tnbdemonf1ni0370861f2295f97c2-nginx-66c9677678-ghr84        1/1     Running   0               5m9s
+   default       tnbdemonf1ni0370861f2295f97c2-nginx-66c9677678-r8zdr        1/1     Running   0               5m9s
+   default       tnbdemonf1ni0370861f2295f97c2-sctpserver-fdfd66856-b6wlb    1/1     Running   0               5m9s
+   default       tnbdemonf1ni0370861f2295f97c2-sctpserver-fdfd66856-m5xhr    1/1     Running   0               5m9s
+   default       tnbdemonf2ni0370861f2295f97c2-multitool-5d4955d655-jgw49    1/1     Running   0               4m55s
+   default       tnbdemonf2ni0370861f2295f97c2-multitool-5d4955d655-xfhp2    1/1     Running   0               4m55s
+   default       tnbdemonf2ni0370861f2295f97c2-nginx-5c9444d69b-cjmt9        1/1     Running   0               4m55s
+   default       tnbdemonf2ni0370861f2295f97c2-nginx-5c9444d69b-drcbw        1/1     Running   0               4m55s
+   default       tnbdemonf2ni0370861f2295f97c2-sctpserver-5ddfcd56c5-797bb   1/1     Running   0               4m55s
+   default       tnbdemonf2ni0370861f2295f97c2-sctpserver-5ddfcd56c5-pvm64   1/1     Running   0               4m55s
+   kube-system   aws-load-balancer-controller-87d79dbb9-82fmq                1/1     Running   0               5m37s
+   kube-system   aws-load-balancer-controller-87d79dbb9-sp7rl                1/1     Running   0               5m37s
+   kube-system   aws-node-6djll                                              2/2     Running   2 (5m45s ago)   8m28s
+   kube-system   aws-node-v9gmz                                              2/2     Running   2 (5m46s ago)   8m41s
+   kube-system   coredns-5b8cc885bc-5f4rg                                    1/1     Running   1 (5m46s ago)   13m
+   kube-system   coredns-5b8cc885bc-cz8lx                                    1/1     Running   1 (5m46s ago)   13m
+   kube-system   ebs-csi-controller-778ccdc94d-bfdlp                         6/6     Running   6 (6m10s ago)   11m
+   kube-system   ebs-csi-controller-778ccdc94d-hzlqw                         6/6     Running   6 (6m10s ago)   11m
+   kube-system   ebs-csi-node-5nq9s                                          3/3     Running   3 (5m45s ago)   8m28s
+   kube-system   ebs-csi-node-s27m8                                          3/3     Running   3 (6m10s ago)   8m41s
+   kube-system   kube-multus-ds-7vf27                                        1/1     Running   2 (6m10s ago)   6m59s
+   kube-system   kube-multus-ds-g6vnm                                        1/1     Running   2 (5m45s ago)   6m59s
+   kube-system   kube-proxy-rdxxb                                            1/1     Running   1 (5m45s ago)   8m28s
+   kube-system   kube-proxy-w4jnf                                            1/1     Running   1 (5m46s ago)   8m41s
+   kube-system   kube-sriov-device-plugin-amd64-lfxpc                        1/1     Running   0               5m43s
+   kube-system   kube-sriov-device-plugin-amd64-n25j9                        1/1     Running   0               5m43s
+   kube-system   whereabouts-979nn                                           1/1     Running   0               6m2s
+   kube-system   whereabouts-vp8dg                                           1/1     Running   0               6m2s
    ```
 
-8. Validate if Multus interfaces are configured correctly on the pods -
+8. Validate if SRIOV configurations are reflected on the EKS worker nodes using the following commands -
 
    ```sh
-   [cloudshell-user@ip-10-130-40-1 ~]$ kubectl exec -ti tnbdemonf1ni0a14b11e0c7a6a064-multitool-89cb5bcb9-889tb  -- ip a
-   1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-      link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-      inet 127.0.0.1/8 scope host lo
-         valid_lft forever preferred_lft forever
-      inet6 ::1/128 scope host 
-         valid_lft forever preferred_lft forever
-   3: eth0@if11: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc noqueue state UP group default 
-      link/ether 02:a9:23:a6:82:bb brd ff:ff:ff:ff:ff:ff link-netnsid 0
-      inet 10.0.2.193/32 scope global eth0
-         valid_lft forever preferred_lft forever
-      inet6 fe80::a9:23ff:fea6:82bb/64 scope link 
-         valid_lft forever preferred_lft forever
-   4: net1@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default 
-      link/ether 06:5a:f6:d2:ae:1d brd ff:ff:ff:ff:ff:ff link-netnsid 0
-      inet 10.0.4.11/24 brd 10.0.4.255 scope global net1
-         valid_lft forever preferred_lft forever
-      inet6 fe80::65a:f600:4d2:ae1d/64 scope link 
-         valid_lft forever preferred_lft forever
-   5: net2@if7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default 
-      link/ether 06:2a:21:1a:0c:19 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-      inet 10.0.6.11/24 brd 10.0.6.255 scope global net2
-         valid_lft forever preferred_lft forever
-      inet6 2600:1f14:3af4:8d00::11/64 scope global 
-         valid_lft forever preferred_lft forever
-      inet6 fe80::62a:2100:21a:c19/64 scope link 
-         valid_lft forever preferred_lft forever       
-   [cloudshell-user@ip-10-130-40-1 ~]$ 
+   [cloudshell-user@ip-10-130-40-1 ~]$ kubectl get nodes
+   NAME                                       STATUS   ROLES    AGE     VERSION
+   ip-10-0-2-212.us-west-2.compute.internal   Ready    <none>   9m37s   v1.29.0-eks-5e0fdde
+   ip-10-0-3-26.us-west-2.compute.internal    Ready    <none>   9m24s   v1.29.0-eks-5e0fdde
+   ```
+
+   ```sh
+   [cloudshell-user@ip-10-132-52-148 ~]$ kubectl get node -o yaml ip-10-0-2-212.us-west-2.compute.internal | yq '.status.allocatable'
+   cpu: 15890m
+   ephemeral-storage: "18242267924"
+   hugepages-1Gi: 8Gi
+   hugepages-2Mi: "0"
+   intel.com/intel_sriov_netdevice_1: "1"
+   memory: 53387784Ki
+   pods: "234"
+   [cloudshell-user@ip-10-132-52-148 ~]$ kubectl get node -o yaml ip-10-0-3-26.us-west-2.compute.internal | yq '.status.allocatable'
+   cpu: 15890m
+   ephemeral-storage: "18242267924"
+   hugepages-1Gi: 8Gi
+   hugepages-2Mi: "0"
+   intel.com/intel_sriov_netdevice_1: "1"
+   memory: 53387784Ki
+   pods: "234"
    ```
 
 ## Cleanup

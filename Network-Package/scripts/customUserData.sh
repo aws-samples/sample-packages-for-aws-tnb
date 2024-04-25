@@ -15,5 +15,7 @@ echo "net.ipv4.conf.all.rp_filter = 0" | tee -a /etc/sysctl.conf
 sudo sysctl -p
 sleep 45
 # command to schedule adding multus interface up command to /etc/rc.local
+chmod +x /etc/rc.d/rc.local
+systemctl enable rc-local --now   
 sudo echo "ip link set eth1 up" >> /etc/rc.local
 sudo echo "ip link set eth2 up" >> /etc/rc.local
