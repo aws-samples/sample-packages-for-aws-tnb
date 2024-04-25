@@ -18,11 +18,9 @@ def shell_run_cmd(cmd,retCode=0):
 data = {}
 data['resourceList'] = []
 start=int(sys.argv[1])
-# end=int(sys.argv[2])
 ctr=int(sys.argv[2])
 
 index=start
-# ctr=1
 while ctr > 0:
     construct={}
     selectors={}

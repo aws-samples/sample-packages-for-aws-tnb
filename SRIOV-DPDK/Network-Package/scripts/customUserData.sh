@@ -31,7 +31,6 @@ echo "S3BucketName - $S3BucketName"
 sed -i -e "s/S3BucketName/$S3BucketName/g" /opt/dpdk/sriov-init.sh
 
 chmod +x /opt/dpdk/sriov-init.sh
-# systemctl enable sriov-init.service
 
 sleep 10
 
@@ -42,7 +41,6 @@ sed -i -e "s/interfaceCount/$interfaceCount/g" /opt/dpdk/sriov-config.sh
 sed -i -e "s/interfaceStartingIndex/$SriovStartingInterfaceIndex/g" /opt/dpdk/sriov-config.sh
 
 chmod +x /opt/dpdk/sriov-config.sh
-# systemctl enable sriov-config.service
 
 # For M7i.4xlarge, please take care to modify the following settings for your choice of instance
 sudo sed -i "s/^#CPUAffinity.*/CPUAffinity=0-1 8-9/g" /etc/systemd/system.conf
@@ -69,20 +67,8 @@ ExecStart=/bin/bash -c "systemctl start sriov-config.service"
 WantedBy=multi-user.target
 EOF
 
-
-# python3 /opt/dpdk/dpdk-resource-builder.py $SriovStartingInterfaceIndex $interfaceCount
-# if [ -d "/etc/pcidp/" ]; then
-#     rm -rf /etc/pcidp/
-# fi
-# mkdir -p /etc/pcidp/
-# cp /tmp/data.txt /etc/pcidp/config.json
-# cp /tmp/data.txt /var/config.json
-
 systemctl daemon-reload
 systemctl enable dpdkbuilder.service
-
-# systemctl start sriov-init.service
-
 
 # Change Kubelet Arguments
 KubeletExtraArguments="--cpu-manager-policy=static"
