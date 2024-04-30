@@ -109,17 +109,17 @@ topology_template:
     DemoNFNS:
       type: tosca.nodes.AWS.NS
       properties:
-        descriptor_id: "a1b2c3d4-c8b5-4dc3-9ef0-555556abcdef"
+        descriptor_id: "a1b2c3d4-c8b5-4dc3-9ef0-777776abcdef"
         descriptor_version: "1.0.0"
         descriptor_name: "NS1"
-        
+
     Vpc1:
       type: tosca.nodes.AWS.Networking.VPC
       properties:
         cidr_block: { get_input: Vpc1Cidr }
         ipv6_cidr_block: AMAZON_PROVIDED
         dns_support: true
-        
+
     DefRouteTableVpc1:
       type: tosca.nodes.AWS.Networking.RouteTable
       properties: 
@@ -128,7 +128,34 @@ topology_template:
           - "Environment=Testing"
       requirements:
         vpc: Vpc1
-  
+
+    PrivRouteTableVpc1Az1:
+      type: tosca.nodes.AWS.Networking.RouteTable
+      properties: 
+        tags:
+          - "Name=PrivRouteTableVpc1Az1"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+
+    PrivRouteTableVpc1Az2:
+      type: tosca.nodes.AWS.Networking.RouteTable
+      properties: 
+        tags:
+          - "Name=PrivRouteTableVpc1Az2"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+
+    MultusRouteTableVpc1:
+      type: tosca.nodes.AWS.Networking.RouteTable
+      properties: 
+        tags:
+          - "Name=MultusRouteTableVpc1"
+          - "Environment=Testing"
+      requirements:
+        vpc: Vpc1
+
     # Security Group
     defaultSecGroup:
       type: tosca.nodes.AWS.Networking.SecurityGroup
@@ -191,7 +218,7 @@ topology_template:
           - "Name=PrivK8sSubnetAz1"
           - "Environment=Testing"               
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: PrivRouteTableVpc1Az1
         vpc: Vpc1
         
     PrivK8sSubnetAz2:
@@ -204,7 +231,7 @@ topology_template:
           - "Name=PrivK8sSubnetAz2"
           - "Environment=Testing"        
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: PrivRouteTableVpc1Az2
         vpc: Vpc1
         
     MultusSubnet1Az1:
@@ -217,9 +244,9 @@ topology_template:
           - "Name=MultusSubnet1Az1"
           - "Environment=Testing"
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: MultusRouteTableVpc1
         vpc: Vpc1
-        
+
     MultusSubnet1Az2:
       type: tosca.nodes.AWS.Networking.Subnet
       properties:
@@ -230,7 +257,7 @@ topology_template:
           - "Name=MultusSubnet1Az2"
           - "Environment=Testing"        
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: MultusRouteTableVpc1
         vpc: Vpc1
 
     MultusSubnet2Az1:
@@ -244,7 +271,7 @@ topology_template:
           - "Name=MultusSubnet2Az1"
           - "Environment=Testing"
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: MultusRouteTableVpc1
         vpc: Vpc1
         
     MultusSubnet2Az2:
@@ -258,15 +285,50 @@ topology_template:
           - "Name=MultusSubnet2Az2"
           - "Environment=Testing"
       requirements:
-        route_table: DefRouteTableVpc1
+        route_table: MultusRouteTableVpc1
         vpc: Vpc1  
+    
+    # Nat Gateways
+    Vpc1NatGwAz1:
+      type: tosca.nodes.AWS.Networking.NATGateway
+      requirements:
+         subnet: PubMgmtSubnetAz1
+         internet_gateway: Vpc1Igw
+      properties:
+         type: PUBLIC
+
+    NatGwDefRouteAz1:
+      type: tosca.nodes.AWS.Networking.Route
+      properties: 
+        dest_cidr_blocks: 
+          - 0.0.0.0/0
+      requirements:
+        nat_gateway: Vpc1NatGwAz1
+        route_table: PrivRouteTableVpc1Az1
+
+    Vpc1NatGwAz2:
+      type: tosca.nodes.AWS.Networking.NATGateway
+      requirements:
+         subnet: PubMgmtSubnetAz2
+         internet_gateway: Vpc1Igw
+      properties:
+         type: PUBLIC
+
+    NatGwDefRouteAz2:
+      type: tosca.nodes.AWS.Networking.Route
+      properties: 
+        dest_cidr_blocks: 
+          - 0.0.0.0/0
+      requirements:
+        nat_gateway: Vpc1NatGwAz2
+        route_table: PrivRouteTableVpc1Az2
 
     PostStepsHookScript:
       type: tosca.nodes.AWS.HookDefinition.Bash
       properties:
         implementation: './hooks/postCreate.sh'
         environment_variables:
-          - "EKS_Cluster_Name=EksCluster"
+          - "EKS_Cluster_Name=EksCluster2"
           - "currentregion=us_west_2"
           - "DefaultSecurityGroup=defaultSecGroup"
         execution_role: { get_input: LifeCycleHookRole }
@@ -293,7 +355,7 @@ topology_template:
         access: "ALL"
         cluster_role: { get_input: eksClusterRole }
         tags:
-          - "Name=EksCluster"
+          - "Name=EksCluster2"
           - "Environment=Testing"
       capabilities:
         multus:

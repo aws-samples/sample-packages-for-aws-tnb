@@ -151,6 +151,8 @@ Please follow the [link](./IPv6/README.md) for artifacts and test procedure to v
 
 Please follow the [link](./SRIOV-DPDK/README.md) for artifacts and test procedure to validate SRIOV DPDK interface configuration with TNB.
 
+Here is [hook script example](./EFS/hooks/postCreate.sh#L47) that shows installation of EKS EFS CSI Driver add-on with TNB.
+
 ## Cleanup
 
 To cleanup the environment via AWS Console, go to Telco Network Builder
