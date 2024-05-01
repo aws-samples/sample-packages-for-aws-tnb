@@ -24,29 +24,6 @@ echo "Describing the cluster"
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 aws eks describe-cluster --name $myEKS --region $myRegion --query cluster.status
 
-# Get all EC2 instance IDs for the EKS cluster
-instance_ids=$(aws ec2 describe-instances \
-    --filters "Name=tag:eks:cluster-name,Values=$myEKS" \
-    --query "Reservations[].Instances[].InstanceId" \
-    --output text)
-
-# Iterate over each instance & reboot the instance
-for instance_id in $instance_ids; do
-    echo "Rebooting instance: $instance_id"
-    aws ec2 reboot-instances --instance-ids $instance_id
-    sleep 2
-done
-
-# Check if all nodes are in READY state after the reboot
-# Loop until all nodes are in READY state
-while [ "$(kubectl get nodes --no-headers | awk '{print $2}' | grep -c -E '^Ready')" -ne "$(kubectl get nodes --no-headers | wc -l)" ]; do
-    echo "Not all nodes are in READY state. Sleeping for 10 seconds..."
-    sleep 10
-done
-
-echo "All nodes are in READY state, moving on..."
-
-
 # Install Whereabouts
 kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/whereabouts/master/doc/crds/daemonset-install.yaml
 kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/whereabouts/master/doc/crds/whereabouts.cni.cncf.io_ippools.yaml

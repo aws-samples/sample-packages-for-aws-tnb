@@ -50,16 +50,14 @@ chmod a+x /opt/dpdk/dpdk-resource-builder.py
 
 cat > /etc/systemd/system/dpdkbuilder.service << EOF
 [Unit]
-Description=Update system time using chronyc before starting kubelet service
+Description=Configure DPDK resources during first startup
 Before=kubelet.service
 
 [Service]
 Type=oneshot
 ExecStart=/bin/bash -c "if [ -f "/etc/pcidp/config.json" ]; then exit ; fi"
 ExecStart=/bin/bash -c "python3 /opt/dpdk/dpdk-resource-builder.py $SriovStartingInterfaceIndex $interfaceCount"
-ExecStart=/bin/bash -c "mkdir -p /etc/pcidp/"
-ExecStart=/bin/bash -c "cp /tmp/data.txt /etc/pcidp/config.json"
-ExecStart=/bin/bash -c "cp /tmp/data.txt /var/config.json"
+ExecStart=/bin/bash -c "cp /etc/pcidp/config.json /var/config.json"
 ExecStart=/bin/bash -c "systemctl enable sriov-init.service"
 ExecStart=/bin/bash -c "systemctl start sriov-init.service"
 ExecStart=/bin/bash -c "systemctl start sriov-config.service"
@@ -81,7 +79,7 @@ EOF
 sed -i 's/KUBELET_EXTRA_ARGS/KUBELET_EXTRA_ARGS $USERDATA_EXTRA_ARGS/' /etc/systemd/system/kubelet.service
 # this update is for the EKS 1.24 or higher.
 sed -i 's/KUBELET_EXTRA_ARGS/KUBELET_EXTRA_ARGS $USERDATA_EXTRA_ARGS/' /etc/eks/containerd/kubelet-containerd.service
-echo "net.ipv4.conf.default.rp_filter = 0" | tee -a /etc/sysctl.conf
+echo "net.ipv4.conf.defau?perf QQQlt.rp_filter = 0" | tee -a /etc/sysctl.conf
 echo "net.ipv4.conf.all.rp_filter = 0" | tee -a /etc/sysctl.conf
 sudo sysctl -p
 sleep 5
@@ -92,3 +90,26 @@ systemctl enable rc-local --now
 sudo echo "ip link set eth1 up" >> /etc/rc.local
 sudo echo "ip link set eth2 up" >> /etc/rc.local
 sudo echo "ip link set eth3 up" >> /etc/rc.local
+
+# Spawn the code in the background to check for multus interfaces and reboot
+{
+    # Function to check if all Multus interfaces are present
+    check_interfaces() {
+
+        expectedCountOfInterfaces=4  # Replace with the expected count of interfaces, eth0 and eth1 are VPC CNI interfaces, in this example - eth2 is a multus interface and eth3 is for SRIOV. Thus the count of 4. 
+        if [[ $(ls /sys/class/net/ |egrep -v 'lo|eni' |wc -l) -eq $expectedCountOfInterfaces ]]; then
+            return 0  # All Multus interfaces are present
+        else
+            return 1  # Multus Interfaces are not yet ready
+        fi
+    }
+    # Wait for Multus interfaces to be added
+    while ! check_interfaces; do
+        echo "Waiting for interfaces to be added..."
+        sleep 10  # Adjust the sleep duration as needed
+    done
+
+    # Once all interfaces are present, initiate reboot
+    echo "All Multus interfaces are present. Initiating reboot..."
+    reboot
+} &

@@ -1,6 +1,7 @@
 import json
 import sys,os
 import subprocess,copy,time
+import shutil
 
 def getpciAddress(intf):
     pci=""
@@ -39,5 +40,14 @@ while ctr > 0:
     ctr=ctr-1
 json_data = json.dumps(data,indent=4)
 print(json_data)
-with open('/tmp/data.txt', 'w') as outfile:
+# Create directory
+directory='/etc/pcidp/'
+if os.path.isdir(directory):
+    # Remove the directory and its contents
+    shutil.rmtree(directory)
+
+# Create the directory
+os.makedirs(directory)
+# Write content to the file
+with open('/etc/pcidp/config.json', 'w') as outfile:
     json.dump(data, outfile,indent=4)

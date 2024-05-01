@@ -52,25 +52,27 @@ cat > aws-efs-csi-driver-trust-policy.json << EOF
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::ACCOUNTID:oidc-provider/oidc.eks.region-code.amazonaws.com/id/EXAMPLEOIDC"
+        "Federated": "arn:aws:iam::$AWS_ACCOUNT_ID:oidc-provider/oidc.eks.$myRegion.amazonaws.com/id/$oidc_id"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringLike": {
-          "oidc.eks.region-code.amazonaws.com/id/EXAMPLEOIDC:sub": "system:serviceaccount:kube-system:efs-csi-*",
-          "oidc.eks.region-code.amazonaws.com/id/EXAMPLEOIDC:aud": "sts.amazonaws.com"
+          "oidc.eks.$myRegion.amazonaws.com/id/$oidc_id:sub": "system:serviceaccount:kube-system:efs-csi-*",
+          "oidc.eks.$myRegion.amazonaws.com/id/$oidc_id:aud": "sts.amazonaws.com"
         }
       }
     }
   ]
 }
 EOF
-sed -i "s/ACCOUNTID/$AWS_ACCOUNT_ID/" aws-efs-csi-driver-trust-policy.json
-sed -i "s/region-code/$currentregion/" aws-efs-csi-driver-trust-policy.json
-sed -i "s/EXAMPLEOIDC/$oidc_id/" aws-efs-csi-driver-trust-policy.json
 
-aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole --assume-role-policy-document file://aws-efs-csi-driver-trust-policy.json
-aws iam attach-role-policy --role-name AmazonEKS_EFS_CSI_DriverRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+if ! aws iam get-role --role-name AmazonEKS_EFS_CSI_DriverRole >/dev/null 2>&1; then
+  echo "Role does not exist. Creating the role..."
+  aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole --assume-role-policy-document file://aws-efs-csi-driver-trust-policy.json
+  aws iam attach-role-policy --role-name AmazonEKS_EFS_CSI_DriverRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy
+else
+    echo "Role already exists. Skipping creation."
+fi
 
 aws eks create-addon --cluster-name $myEKS --addon-name aws-efs-csi-driver --addon-version v2.0.1-eksbuild.1 \
     --service-account-role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEKS_EFS_CSI_DriverRole --resolve-conflicts OVERWRITE
