@@ -66,6 +66,7 @@ cat > aws-efs-csi-driver-trust-policy.json << EOF
 }
 EOF
 
+# Check if EFS CSI Driver Role exists and then create it, else do nothing
 if ! aws iam get-role --role-name AmazonEKS_EFS_CSI_DriverRole >/dev/null 2>&1; then
   echo "Role does not exist. Creating the role..."
   aws iam create-role --role-name AmazonEKS_EFS_CSI_DriverRole --assume-role-policy-document file://aws-efs-csi-driver-trust-policy.json
@@ -74,8 +75,35 @@ else
     echo "Role already exists. Skipping creation."
 fi
 
+# Create EKS EFS CSI add-on
 aws eks create-addon --cluster-name $myEKS --addon-name aws-efs-csi-driver --addon-version v2.0.1-eksbuild.1 \
     --service-account-role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEKS_EFS_CSI_DriverRole --resolve-conflicts OVERWRITE
+
+# Create Amazon EFS filesystem with encryption
+efs_filesystem_id=$(aws efs create-file-system \
+    --creation-token my-efs-filesystem \
+    --performance-mode generalPurpose \
+    --tags Key=Name,Value=my-efs \
+    --encrypted \
+    --query 'FileSystemId' \
+    --output text)
+
+echo "Created encrypted EFS filesystem with ID: $efs_filesystem_id"
+
+# Create Kubernetes StorageClass
+cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-storage-class
+provisioner: kubernetes.io/aws-efs
+parameters:
+  fileSystemId: "$efs_filesystem_id"
+  dnsname: "fs-$efs_filesystem_id.efs.us-west-2.amazonaws.com"
+EOF
+
+echo "StorageClass 'efs-storage-class' created with encrypted EFS filesystem ID: $efs_filesystem_id"
+
 
 # Install Helm
 export VERIFY_CHECKSUM=false

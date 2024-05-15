@@ -31,7 +31,7 @@ Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be a
    --endpoint-url "https://tnb.${AWS_REGION}.amazonaws.com" \
    --region ${AWS_REGION}
    ```
-
+Nope
    ```sh
    fp2_id=$(aws tnb create-sol-function-package | jq -r '.id')
 
