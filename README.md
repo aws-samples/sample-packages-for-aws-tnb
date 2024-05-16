@@ -201,4 +201,4 @@ aws tnb delete-sol-function-package \
 --region ${AWS_REGION}
 ```
 
-Delete the CloudFormation stack that created the IAM roles needed for TNB.
+Delete the CloudFormation stack that created the IAM roles needed for TNB. 
