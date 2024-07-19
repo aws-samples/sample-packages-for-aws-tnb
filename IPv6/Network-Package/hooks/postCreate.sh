@@ -4,8 +4,6 @@ set -e
 #unset AWS_ACCESS_KEY_ID
 #unset AWS_SECRET_ACCESS_KEY
 
-echo "Testing parameter passing"
-# Passing region information and EKS cluster role
 echo $EKS_Cluster_Name
 echo $currentregion
 
@@ -41,9 +39,9 @@ kubectl apply -f nad-sample-ipv6.yaml
 echo "NAD creation succeeded"
 
 # Create OIDC 
-oidc_id=$(aws eks describe-cluster --name $targetEks --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5)
+oidc_id=$(aws eks describe-cluster --name $myEKS --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5)
 if ! aws iam list-open-id-connect-providers | grep -q $oidc_id ; then
-  eksctl utils associate-iam-oidc-provider --cluster $targetEks --approve
+  eksctl utils associate-iam-oidc-provider --cluster $myEKS --approve
   echo "OIDC creation succeeded"
 else
   echo "OIDC already exists. Skipping creation."
