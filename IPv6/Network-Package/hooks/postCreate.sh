@@ -40,12 +40,9 @@ echo "NAD creation succeeded"
 
 # Create OIDC 
 oidc_id=$(aws eks describe-cluster --name $myEKS --query "cluster.identity.oidc.issuer" --output text | cut -d '/' -f 5)
-if ! aws iam list-open-id-connect-providers | grep -q $oidc_id ; then
-  eksctl utils associate-iam-oidc-provider --cluster $myEKS --approve
-  echo "OIDC creation succeeded"
-else
-  echo "OIDC already exists. Skipping creation."
-fi
+aws iam list-open-id-connect-providers | grep $oidc_id | cut -d "/" -f4
+eksctl utils associate-iam-oidc-provider --cluster $myEKS --approve
+aws iam list-open-id-connect-providers | grep $oidc_id | cut -d "/" -f4
 
 echo "OIDC creation succeeded"
 

@@ -31,7 +31,7 @@ Additionally the [hook scripts](./Network-Package/hooks/postCreate.sh) must be a
    --endpoint-url "https://tnb.${AWS_REGION}.amazonaws.com" \
    --region ${AWS_REGION}
    ```
-Nope
+
    ```sh
    fp2_id=$(aws tnb create-sol-function-package | jq -r '.id')
 
@@ -151,7 +151,7 @@ Please follow the [link](./IPv6/README.md) for artifacts and test procedure to v
 
 Please follow the [link](./SRIOV-DPDK/README.md) for artifacts and test procedure to validate SRIOV DPDK interface configuration with TNB.
 
-Here is [hook script example](./EFS/hooks/postCreate.sh#L47) that shows installation of EKS EFS CSI Driver add-on & EFS filesystem creation with TNB.
+Here is [hook script example](./EFS/hooks/postCreate.sh#L47) that shows installation of EKS EFS CSI Driver add-on with TNB.
 
 ## Cleanup
 
@@ -201,4 +201,4 @@ aws tnb delete-sol-function-package \
 --region ${AWS_REGION}
 ```
 
-Delete the CloudFormation stack that created the IAM roles needed for TNB. 
+Delete the CloudFormation stack that created the IAM roles needed for TNB.
