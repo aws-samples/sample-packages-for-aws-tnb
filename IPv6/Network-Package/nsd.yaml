@@ -323,20 +323,20 @@ topology_template:
         nat_gateway: Vpc1NatGwAz2
         route_table: PrivRouteTableVpc1Az2
 
-    PostStepsHookScript:
+    PreStepsHookScript:
       type: tosca.nodes.AWS.HookDefinition.Bash
       properties:
-        implementation: './hooks/postCreate.sh'
+        implementation: './hooks/preCreate.sh'
         environment_variables:
           - "EKS_Cluster_Name=EksCluster2"
           - "currentregion=us_west_2"
           - "DefaultSecurityGroup=defaultSecGroup"
         execution_role: { get_input: LifeCycleHookRole }
 
-    PostStepsHookExecution:
+    PreStepsHookExecution:
       type: tosca.nodes.AWS.HookExecution
       requirements:
-        definition: PostStepsHookScript
+        definition: PreStepsHookScript
         vpc: Vpc1
 
     CustomUserData:
@@ -518,4 +518,4 @@ topology_template:
           - demonf2.DemoNF2
       interfaces:
         Hook:
-          pre_create: PostStepsHookExecution
+          pre_create: PreStepsHookExecution
