@@ -7,7 +7,8 @@ set -e
 echo $EKS_Cluster_Name
 echo $currentregion
 
-myRegion=us-west-2
+myRegion=$(echo $currentregion | sed 's/_/-/g')
+echo $myRegion
 
 # Query the cluster name based on tag passed from NSD
 myEKS=`aws resourcegroupstaggingapi get-resources --tag-filters Key="Name",Values=$EKS_Cluster_Name --region $myRegion | jq '.ResourceTagMappingList[0].ResourceARN' | grep -o '[^\/]*$' | tr -d '"'`

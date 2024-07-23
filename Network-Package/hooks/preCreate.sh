@@ -7,7 +7,8 @@ set -e
 echo $EKS_Cluster_Name
 echo $currentregion
 
-myRegion=us-west-2
+myRegion=$(echo $currentregion | sed 's/_/-/g')
+echo $myRegion
 
 # Query the cluster name based on tag passed from NSD
 myEKS=`aws resourcegroupstaggingapi get-resources --tag-filters Key="Name",Values=$EKS_Cluster_Name --region $myRegion | jq '.ResourceTagMappingList[0].ResourceARN' | grep -o '[^\/]*$' | tr -d '"'`
@@ -77,14 +78,18 @@ fi
 aws eks create-addon --cluster-name $myEKS --addon-name aws-efs-csi-driver --addon-version v2.0.1-eksbuild.1 \
     --service-account-role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEKS_EFS_CSI_DriverRole --resolve-conflicts OVERWRITE
 
+
+randToken=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
+
 # Create Amazon EFS filesystem with encryption
 efs_filesystem_id=$(aws efs create-file-system \
-    --creation-token my-efs-filesystem \
+    --creation-token my-efs-filesystem-$randToken \
     --performance-mode generalPurpose \
     --tags Key=Name,Value=my-efs \
     --encrypted \
     --query 'FileSystemId' \
     --output text)
+
 
 echo "Created encrypted EFS filesystem with ID: $efs_filesystem_id"
 
