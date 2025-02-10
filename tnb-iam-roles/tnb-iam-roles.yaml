@@ -198,6 +198,11 @@ Resources:
                   - arn:aws:eks:*:*:nodegroup/tnb*/tnb*/*
                   - arn:aws:cloudformation:*:*:stack/tnb*
                 Sid: "TNBAccessInfraResourcePerms"
+              - Effect: "Allow"
+                Action:
+                    - "tag:GetResources"
+                Resource: "*"
+                Sid: "TaggingPolicy"
 
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
